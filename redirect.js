@@ -1,19 +1,28 @@
-// Inspired by https://iafisher.com/blog/2020/10/golinks
-
 const links = {
-  'docs': 'https://docs.google.com',
-  'sheets': 'https://sheets.google.com',
-  'me': 'https://joelburget.com',
+  docs: "https://docs.google.com",
+  sheets: "https://sheets.google.com",
+  me: "https://joelburget.com",
+  bm: "https://x.com/i/bookmarks",
+  lw: "https://lesswrong.com",
+  hn: "https://news.ycombinator.com",
 };
 
-function redirect(request) {
-  const prefix = 'http://go/';
-  const path = request.url.slice(prefix.length);
-  return { redirectUrl: links[path] };
-}
+const rules = Object.entries(links).map(([key, value], index) => ({
+  id: index + 1,
+  priority: 1,
+  action: {
+    type: "redirect",
+    redirect: { url: value },
+  },
+  condition: {
+    urlFilter: `http://go/${key}`,
+    resourceTypes: ["main_frame"],
+  },
+}));
 
-if (typeof browser === "undefined") {
-    var browser = chrome;
-}
-
-browser.webRequest.onBeforeRequest.addListener(redirect, { urls: ['http://go/*']}, ['blocking']);
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.declarativeNetRequest.updateDynamicRules({
+    addRules: rules,
+    removeRuleIds: [1, 2, 3], // Clear any existing rules with these IDs first
+  });
+});
